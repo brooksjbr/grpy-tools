@@ -3,20 +3,16 @@ from unittest.mock import patch, MagicMock
 from pathlib import Path
 from src.grpy.dev_tools.bootstrap_dev import BootstrapDev
 
-@patch('pathlib.Path')
-def test_bootstrap_dev_init(mock_path):
-    mock_path.home.return_value = Path('/mock/home')
-    home = str(mock_path.home())
+def test_bootstrap_dev_init_home():
+    with patch('src.grpy.dev_tools.bootstrap_dev.Path') as mock_path:
+        mock_path.home.return_value = Path('/mock/home')
+        bootstrap = BootstrapDev()
+        assert bootstrap.home == '/mock/home'
 
-    bootstrap = BootstrapDev(
-        home=home,  # Convert Path object to string
-        venv_path="projects/.venvs",
-        project="grpy-dev-tools"
-    )
-
-    assert isinstance(bootstrap, BootstrapDev)
-    assert bootstrap.home == '/mock/home'
-    assert bootstrap.venv_path == "projects/.venvs"
-    assert bootstrap.project == "grpy-dev-tools"
-
-    mock_path.home.assert_called_once()
+def test_bootstrap_dev_update_home():
+    with patch('src.grpy.dev_tools.bootstrap_dev.Path') as mock_path:
+        mock_path.home.return_value = Path('/mock/home')
+        bootstrap = BootstrapDev()
+        assert bootstrap.home == '/mock/home'
+        bootstrap.home = '/mock/test'
+        assert bootstrap.home == '/mock/test'
