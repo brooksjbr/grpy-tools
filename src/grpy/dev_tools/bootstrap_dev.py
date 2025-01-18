@@ -1,6 +1,6 @@
 #!/usr/bin/env python3
 from pathlib import Path
-
+from typing import Union
 from pydantic import BaseModel, Field, field_validator
 
 
@@ -8,7 +8,7 @@ class BootstrapDev(BaseModel):
     home: str = Field(default_factory=lambda: str(Path.home()), description="User home directory")
 
     @field_validator('home')
-    def validate_path(cls, value: str | Path):
+    def validate_path(cls, value: Union[str, Path]):
         try:
             path_obj = Path(value).resolve()
             if not path_obj.exists():
