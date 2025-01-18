@@ -20,6 +20,7 @@ def test_bootstrap_dev_update_home():
         bootstrap.home = "/mock/test"
         assert bootstrap.home == "/mock/test"
 
+
 def test_invalid_home_path():
     bootstrap = BootstrapDev()
     nonexistent_path = Path("/definitely/not/a/real/path")
