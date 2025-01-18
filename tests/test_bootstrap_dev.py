@@ -1,6 +1,7 @@
-import pytest
 from pathlib import Path
 from unittest.mock import patch
+
+import pytest
 
 from src.grpy.dev_tools.bootstrap_dev import BootstrapDev
 
@@ -28,4 +29,4 @@ def test_invalid_home_path():
     with pytest.raises(ValueError, match="Path does not exist"):
         bootstrap.home = nonexistent_path
         path = bootstrap.validate_path(nonexistent_path)
-        assert path == None
+        assert path is None
