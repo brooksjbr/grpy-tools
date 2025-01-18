@@ -26,7 +26,7 @@ jobs:
                   python -m pip install --upgrade pip
                   pip install hatch
                   pip install -e ".[test]"
-                  pip install pytest pytest-cov coverage, pydantic
+                  pip install pytest pytest-cov coverage pydantic
             - name: Run tests
               run: |
                   pytest --cov=src.grpy --cov-report=xml tests/
