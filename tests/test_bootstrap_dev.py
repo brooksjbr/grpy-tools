@@ -1,3 +1,4 @@
+import pytest
 from pathlib import Path
 from unittest.mock import patch
 
@@ -18,3 +19,11 @@ def test_bootstrap_dev_update_home():
         assert bootstrap.home == "/mock/home"
         bootstrap.home = "/mock/test"
         assert bootstrap.home == "/mock/test"
+
+def test_bootstrap_dev_validate_path():
+    bootstrap = BootstrapDev()
+    nonexistent_path = Path("/definitely/not/a/real/path")
+
+    with pytest.raises(ValueError, match="Path does not exist"):
+        bootstrap.home = nonexistent_path
+        bootstrap.validate_path(nonexistent_path)
