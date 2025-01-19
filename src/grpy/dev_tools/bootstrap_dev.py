@@ -6,12 +6,11 @@ from pydantic import BaseModel, Field, field_validator
 
 
 class BootstrapDev(BaseModel):
-    home_dir: str = Field(
-        default_factory=lambda: str(Path.home()), description="User home directory"
-    )
-    project_dir: str = Field(default_factory=lambda: Path.cwd().name, description="project name")
+    project_name: str = Field(default_factory=lambda: Path.cwd().name)
+    project_path: str = Field(default_factory=lambda: Path.cwd())
 
-    @field_validator("home_dir")
+    @field_validator("project_path")
+    @classmethod
     def validate_path(cls, path: Union[str, Path]):
         try:
             path_obj = Path(path).resolve()
