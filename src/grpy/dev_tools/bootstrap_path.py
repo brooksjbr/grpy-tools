@@ -8,6 +8,7 @@ class BootstrapPath(BaseModel, validate_assignment=True):
     model_config = ConfigDict(strict=True)
     current: Annotated[Path, Field(strict=True, default_factory=Path.cwd)]
     target: Annotated[Path, Field(strict=True, default_factory=Path.cwd)]
+    subdirectory: Annotated[str, Field(strict=True, default=None)]
 
     def check_validation(validator_method):
         def wrapper(self, *args, **kwargs):
