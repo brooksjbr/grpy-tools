@@ -6,8 +6,8 @@ from pydantic import BaseModel, ConfigDict, Field, ValidationError, model_valida
 
 class BootstrapPath(BaseModel, validate_assignment=True):
     model_config = ConfigDict(strict=True)
-    current: Annotated[Path, Field(strict=True)]
-    target: Annotated[Path, Field(strict=True)]
+    current: Annotated[Path, Field(strict=True, default_factory=Path.cwd)]
+    target: Annotated[Path, Field(strict=True, default_factory=Path.cwd)]
 
     def check_validation(validator_method):
         def wrapper(self, *args, **kwargs):
