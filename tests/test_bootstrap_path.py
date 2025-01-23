@@ -29,11 +29,12 @@ def error_msg(invalid_path):
 
 
 def test_bootstrap_path_init(mock_cwd, generate_path):
-    bootstrap_path = BootstrapPath()
+    bp = BootstrapPath()
 
-    assert isinstance(bootstrap_path, BootstrapPath)
-    assert bootstrap_path.current == generate_path
-    assert bootstrap_path.target == generate_path
+    assert isinstance(bp, BootstrapPath)
+    assert bp.current == generate_path
+    assert bp.target == generate_path
+    assert bp.subdirectory is None
 
 
 def test_bootstrap_path_init_update_path_with_valid_paths(tmp_path_factory):
@@ -100,3 +101,13 @@ def test_bootstrap_path_invalid_current(generate_path, invalid_path, error_msg):
 
     assert exc_info.value.errors()[0]["type"] == "value_error"
     assert error_msg in exc_info.value.errors()[0]["msg"]
+
+
+def test_bootstrap_path_with_subdirectory_field(mock_cwd, generate_path):
+    bootstrap_path = BootstrapPath(subdirectory="new_project")
+
+    assert isinstance(bootstrap_path, BootstrapPath)
+    assert bootstrap_path.current == generate_path
+    assert bootstrap_path.target == generate_path
+    assert bootstrap_path.subdirectory == "new_project"
+    assert isinstance(bootstrap_path.subdirectory, str)
