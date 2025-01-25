@@ -1,40 +1,42 @@
+import logging
+import os
 from pathlib import Path
-from typing import Annotated
+from typing import Annotated, Callable, ClassVar, TypeVar
 
 from pydantic import BaseModel, ConfigDict, Field, ValidationError, model_validator
+
+T = TypeVar("T")
+logger = logging.getLogger(__name__)
 
 
 class BootstrapPath(BaseModel, validate_assignment=True):
     model_config = ConfigDict(strict=True)
-    current: Annotated[Path, Field(strict=True, default_factory=Path.cwd)]
     target: Annotated[Path, Field(strict=True, default_factory=Path.cwd)]
-    subdirectory: Annotated[str, Field(strict=True, default=None)]
 
-    def check_validation(validator_method):
+    ERROR_ABSOLUTE_PATH: ClassVar[str] = "Path must be absolute: {}"
+    ERROR_PATH_EXISTS: ClassVar[str] = "Path does not exist: {}"
+    ERROR_PATH_READABLE: ClassVar[str] = "Path is not readable: {}"
+
+    def check_validation(validator_method: Callable[..., T]) -> Callable[..., T]:
         def wrapper(self, *args, **kwargs):
             try:
                 return validator_method(self, *args, **kwargs)
             except ValidationError as exc:
-                print(repr(exc.errors()[0]["type"]))
+                logger.error(f"Validation error: {exc.errors()[0]['type']}")
+            return self
 
         return wrapper
 
     @model_validator(mode="after")
     @check_validation
     def validate_path(self):
-        path_fields = self.get_path_attributes()
+        if not os.access(self.target, os.R_OK):
+            raise ValueError(self.ERROR_PATH_READABLE.format(self.target))
 
-        for field in path_fields:
-            path_value = getattr(self, field)
-            if not path_value.exists():
-                raise ValueError(f"This path does not exist: {path_value}")
+        if not self.target.is_absolute():
+            raise ValueError(self.ERROR_ABSOLUTE_PATH.format(self.target))
+
+        if not self.target.exists():
+            raise ValueError(self.ERROR_PATH_EXISTS.format(self.target))
 
         return self
-
-    def get_path_attributes(self):
-        path_fields = [
-            field_name
-            for field_name, field_info in self.model_fields.items()
-            if field_info.annotation == Path
-        ]
-        return path_fields
