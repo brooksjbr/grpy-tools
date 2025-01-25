@@ -25,89 +25,61 @@ def mock_cwd(monkeypatch, generate_path):
 
 @pytest.fixture
 def error_msg(invalid_path):
-    return f"This path does not exist: {invalid_path}"
+    return f"Path does not exist: {invalid_path}"
 
 
 def test_bootstrap_path_init(mock_cwd, generate_path):
     bp = BootstrapPath()
 
     assert isinstance(bp, BootstrapPath)
-    assert bp.current == generate_path
     assert bp.target == generate_path
-    assert bp.subdirectory is None
 
 
-def test_bootstrap_path_init_update_path_with_valid_paths(tmp_path_factory):
-    path1 = tmp_path_factory.mktemp("path1")
+def test_bootstrap_path_update_target_after_init(mock_cwd, tmp_path_factory):
     path2 = tmp_path_factory.mktemp("path2")
 
     bootstrap_path = BootstrapPath()
-
-    bootstrap_path.current = path1
     bootstrap_path.target = path2
 
-    assert bootstrap_path.current == path1
     assert bootstrap_path.target == path2
-    assert bootstrap_path.current != bootstrap_path.target
 
 
-def test_bootstrap_path_init_update_path_with_invalid_paths(mock_cwd, generate_path, invalid_path):
-    bootstrap_path = BootstrapPath()
-
+def test_bootstrap_path_path_unreadable(invalid_path):
     with pytest.raises(ValidationError) as exc_info:
-        bootstrap_path.current = invalid_path
-        bootstrap_path.target = invalid_path
-
-    err = invalid_path
-    assert exc_info.value.errors()[0]["type"] == "value_error"
-    assert str(err) in exc_info.value.errors()[0]["msg"]
+        BootstrapPath(target=invalid_path)
+    assert f"Path is not readable: {invalid_path}" in str(exc_info.value)
 
 
-def test_bootstrap_path_init_update_path_with_invalid_current(
-    mock_cwd, generate_path, invalid_path
-):
-    bootstrap_path = BootstrapPath()
-
-    with pytest.raises(ValidationError) as exc_info:
-        bootstrap_path.current = invalid_path
-
-    err = invalid_path
-    assert exc_info.value.errors()[0]["type"] == "value_error"
-    assert str(err) in exc_info.value.errors()[0]["msg"]
+def test_bootstrap_path_empty_path():
+    with pytest.raises(ValidationError):
+        BootstrapPath(target="")
 
 
-def test_bootstrap_path_init_update_path_with_invalid_target(mock_cwd, generate_path, invalid_path):
-    bootstrap_path = BootstrapPath()
-
-    with pytest.raises(ValidationError) as exc_info:
-        bootstrap_path.target = invalid_path
-
-    err = invalid_path
-    assert exc_info.value.errors()[0]["type"] == "value_error"
-    assert str(err) in exc_info.value.errors()[0]["msg"]
+def test_bootstrap_path_invalid_type():
+    with pytest.raises(ValidationError):
+        BootstrapPath(target=123)
 
 
-def test_bootstrap_path_invalid_target(generate_path, invalid_path, error_msg):
-    with pytest.raises(ValidationError) as exc_info:
-        BootstrapPath(current=generate_path, target=invalid_path)
+def test_bootstrap_path_multiple_updates(mock_cwd, tmp_path_factory):
+    path1 = tmp_path_factory.mktemp("path1")
+    path2 = tmp_path_factory.mktemp("path2")
+    path3 = tmp_path_factory.mktemp("path3")
 
-    assert exc_info.value.errors()[0]["type"] == "value_error"
-    assert error_msg in exc_info.value.errors()[0]["msg"]
+    bp = BootstrapPath(target=path1)
+    assert bp.target == path1
+
+    bp.target = path2
+    assert bp.target == path2
+
+    bp.target = path3
+    assert bp.target == path3
 
 
-def test_bootstrap_path_invalid_current(generate_path, invalid_path, error_msg):
-    with pytest.raises(ValidationError) as exc_info:
-        BootstrapPath(current=invalid_path, target=generate_path)
+def test_bootstrap_path_relative_path(mock_cwd):
+    relative_path = Path("./test_dir")
+    relative_path.mkdir(exist_ok=True)
 
-    assert exc_info.value.errors()[0]["type"] == "value_error"
-    assert error_msg in exc_info.value.errors()[0]["msg"]
+    with pytest.raises(ValidationError):
+        BootstrapPath(target=relative_path)
 
-
-def test_bootstrap_path_with_subdirectory_field(mock_cwd, generate_path):
-    bootstrap_path = BootstrapPath(subdirectory="new_project")
-
-    assert isinstance(bootstrap_path, BootstrapPath)
-    assert bootstrap_path.current == generate_path
-    assert bootstrap_path.target == generate_path
-    assert bootstrap_path.subdirectory == "new_project"
-    assert isinstance(bootstrap_path.subdirectory, str)
+    relative_path.rmdir()
