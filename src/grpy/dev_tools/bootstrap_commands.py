@@ -1,9 +1,12 @@
 import shutil
-from typing import Annotated, List
+from typing import Annotated, List, Set
 
 from pydantic import BaseModel, ConfigDict, Field, model_validator
 
 CommandType = List[List[str]]
+
+# Define whitelist of allowed commands
+PERMITTED_COMMANDS: Set[str] = {"git", "python", "pip", "gh"}
 
 
 class BootstrapCommands(BaseModel):
@@ -27,4 +30,6 @@ class BootstrapCommands(BaseModel):
         for cmd in self.cmds:
             if shutil.which(cmd[0]) is None:
                 raise ValueError(f"Command '{cmd[0]}' not found in system PATH")
+            if cmd[0] not in PERMITTED_COMMANDS:
+                raise ValueError(f"Command '{cmd[0]}' is not in the permitted commands list")
         return self

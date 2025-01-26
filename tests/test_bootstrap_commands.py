@@ -9,8 +9,8 @@ from src.grpy.dev_tools.bootstrap_commands import BootstrapCommands
 def nested_commands():
     return [
         ["pip install -e '.[dev]'"],
-        ["pytest tests/"],
-        ["which python"],
+        ["gh --help"],
+        ["python --help"],
         ["git status"],
     ]
 
@@ -19,8 +19,8 @@ def nested_commands():
 def formatted_commands():
     return [
         ["pip", "install", "-e", "'.[dev]'"],
-        ["pytest", "tests/"],
-        ["which", "python"],
+        ["gh", "--help"],
+        ["python", "--help"],
         ["git", "status"],
     ]
 
@@ -68,7 +68,7 @@ def test_bootstrap_commands_none_input():
 
 def test_command_is_missing_from_filesystem():
     with patch("shutil.which") as mock_which:
-        # Mock responses directly without filesystem checks
+
         def mock_response(cmd):
             valid_commands = {
                 "git": "/mock/path/git",
@@ -79,8 +79,16 @@ def test_command_is_missing_from_filesystem():
 
         mock_which.side_effect = mock_response
 
-        # Test invalid command raises ValueError
         with pytest.raises(ValueError) as exc_info:
             BootstrapCommands(cmds=[["nonexistent", "arg1"], ["git", "status"]])
 
         assert "Command 'nonexistent' not found in system PATH" in str(exc_info.value)
+
+
+def test_non_whitelisted_command_raises_error():
+    with pytest.raises(ValueError, match="Command 'rm' is not in the permitted commands list"):
+        BootstrapCommands(
+            cmds=[
+                ["rm", "-rf", "/"],
+            ]
+        )
