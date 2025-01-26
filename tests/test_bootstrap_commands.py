@@ -1,3 +1,5 @@
+from unittest.mock import patch
+
 import pytest
 
 from src.grpy.dev_tools.bootstrap_commands import BootstrapCommands
@@ -62,3 +64,23 @@ def test_bootstrap_commands_inner_cmd_formatted(nested_commands, formatted_comma
 def test_bootstrap_commands_none_input():
     with pytest.raises(ValueError):
         BootstrapCommands(cmds=None)
+
+
+def test_command_is_missing_from_filesystem():
+    with patch("shutil.which") as mock_which:
+        # Mock responses directly without filesystem checks
+        def mock_response(cmd):
+            valid_commands = {
+                "git": "/mock/path/git",
+                "python": "/mock/path/python",
+                "nonexistent": None,
+            }
+            return valid_commands.get(cmd)
+
+        mock_which.side_effect = mock_response
+
+        # Test invalid command raises ValueError
+        with pytest.raises(ValueError) as exc_info:
+            BootstrapCommands(cmds=[["nonexistent", "arg1"], ["git", "status"]])
+
+        assert "Command 'nonexistent' not found in system PATH" in str(exc_info.value)

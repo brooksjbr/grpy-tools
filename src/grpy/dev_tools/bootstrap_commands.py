@@ -1,3 +1,4 @@
+import shutil
 from typing import Annotated, List
 
 from pydantic import BaseModel, ConfigDict, Field, model_validator
@@ -11,12 +12,19 @@ class BootstrapCommands(BaseModel):
     cmds: Annotated[CommandType, Field()]
 
     @model_validator(mode="after")
-    def split_command_strings(self) -> "BootstrapCommands":
-        processed_commands = []
+    def format_command_strings(self) -> "BootstrapCommands":
+        processed_commands: CommandType = []
         for cmd in self.cmds:
             if len(cmd) == 1 and " " in cmd[0]:
                 processed_commands.append(cmd[0].split())
             else:
                 processed_commands.append(cmd)
         self.cmds = processed_commands
+        return self
+
+    @model_validator(mode="after")
+    def validate_commands_exist(self) -> "BootstrapCommands":
+        for cmd in self.cmds:
+            if shutil.which(cmd[0]) is None:
+                raise ValueError(f"Command '{cmd[0]}' not found in system PATH")
         return self
