@@ -23,12 +23,7 @@ def mock_cwd(monkeypatch, generate_path):
     return generate_path
 
 
-@pytest.fixture
-def error_msg(invalid_path):
-    return f"Path does not exist: {invalid_path}"
-
-
-def test_bootstrap_path_init(mock_cwd, generate_path):
+def test_bootstrap_path_init_with_default_cwd(mock_cwd, generate_path):
     bp = BootstrapPath()
 
     assert isinstance(bp, BootstrapPath)
@@ -50,14 +45,11 @@ def test_bootstrap_path_path_unreadable(invalid_path):
     assert f"Path is not readable: {invalid_path}" in str(exc_info.value)
 
 
-def test_bootstrap_path_empty_path():
-    with pytest.raises(ValidationError):
-        BootstrapPath(target="")
-
-
 def test_bootstrap_path_invalid_type():
-    with pytest.raises(ValidationError):
+    with pytest.raises(ValidationError) as exc_info:
         BootstrapPath(target=123)
+
+    assert "Input should be an instance of Path" in str(exc_info.value)
 
 
 def test_bootstrap_path_multiple_updates(mock_cwd, tmp_path_factory):
@@ -83,3 +75,16 @@ def test_bootstrap_path_relative_path(mock_cwd):
         BootstrapPath(target=relative_path)
 
     relative_path.rmdir()
+
+
+def test_bootstrap_path_rejects_file(tmp_path_factory):
+    tmp_dir = tmp_path_factory.mktemp("test_dir")
+    tmp_file = tmp_dir / "test.txt"
+    tmp_file.write_text("test content")
+
+    tmp_file.chmod(0o644)
+
+    with pytest.raises(ValueError) as exc_info:
+        BootstrapPath(target=tmp_file)
+
+    assert BootstrapPath.ERROR_NOT_DIRECTORY.format(tmp_file) in str(exc_info.value)

@@ -11,11 +11,12 @@ logger = logging.getLogger(__name__)
 
 class BootstrapPath(BaseModel, validate_assignment=True):
     model_config = ConfigDict(strict=True)
-    target: Annotated[Path, Field(strict=True, default_factory=Path.cwd)]
+    target: Annotated[Path, Field(default_factory=Path.cwd)]
 
     ERROR_ABSOLUTE_PATH: ClassVar[str] = "Path must be absolute: {}"
     ERROR_PATH_EXISTS: ClassVar[str] = "Path does not exist: {}"
     ERROR_PATH_READABLE: ClassVar[str] = "Path is not readable: {}"
+    ERROR_NOT_DIRECTORY: ClassVar[str] = "Path must be a directory: {}"
 
     def check_validation(validator_method: Callable[..., T]) -> Callable[..., T]:
         def wrapper(self, *args, **kwargs):
@@ -38,5 +39,8 @@ class BootstrapPath(BaseModel, validate_assignment=True):
 
         if not self.target.exists():
             raise ValueError(self.ERROR_PATH_EXISTS.format(self.target))
+
+        if not self.target.is_dir():
+            raise ValueError(self.ERROR_NOT_DIRECTORY.format(self.target))
 
         return self
