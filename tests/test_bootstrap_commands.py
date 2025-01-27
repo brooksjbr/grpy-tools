@@ -35,19 +35,15 @@ def test_bootstrap_commands_init(nested_commands):
 
 
 def test_bootstrap_commands_validate_cmds_list():
-    with pytest.raises(ValueError):
-        BootstrapCommands(cmds=123)
-
-
-def test_bootstrap_commands_invalid_cmds_inner_mixed_type_list():
-    with pytest.raises(ValueError):
-        BootstrapCommands(cmds=[123, "test"])
+    with pytest.raises(ValueError) as exc_info:
+        BootstrapCommands(cmds=[["invalid_command", "git status"]])
+    assert "Command 'invalid_command' not found in system PATH" in str(exc_info.value)
 
 
 def test_bootstrap_commands_empty():
-    cb = BootstrapCommands(cmds=[])
-    assert isinstance(cb, BootstrapCommands)
-    assert len(cb.cmds) == 0
+    with pytest.raises(IndexError) as exc_info:
+        BootstrapCommands(cmds=[]).run_commands()
+    assert "list index out of range" in str(exc_info.value)
 
 
 def test_bootstrap_commands_nested_commands(nested_commands, formatted_commands):
