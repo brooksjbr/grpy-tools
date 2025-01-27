@@ -1,4 +1,5 @@
 import shutil
+from subprocess import PIPE, Popen
 from typing import Annotated, List, Set
 
 from pydantic import BaseModel, ConfigDict, Field, model_validator
@@ -33,3 +34,19 @@ class BootstrapCommands(BaseModel):
             if cmd[0] not in PERMITTED_COMMANDS:
                 raise ValueError(f"Command '{cmd[0]}' is not in the permitted commands list")
         return self
+
+    def run_commands(self) -> None:
+        cmd = self.cmds[0]
+        with Popen(cmd, stdin=PIPE, stderr=PIPE) as process:
+            print(f"Executing command: {' '.join(cmd)}")
+            cmd_result, err = process.communicate()
+            return_code = process.returncode
+            if return_code != 0:
+                process.kill()
+                raise RuntimeError(f"Command failed: {' '.join(cmd)}\nError: {err}")
+            else:
+                print(f"Command completed successfully: {' '.join(cmd)}")
+                print(f"Output: {cmd_result}")
+
+        print("All commands executed successfully")
+        return None
