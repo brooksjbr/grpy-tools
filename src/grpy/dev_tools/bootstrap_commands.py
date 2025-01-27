@@ -1,10 +1,12 @@
 import shutil
+from functools import wraps
 from subprocess import PIPE, Popen
-from typing import Annotated, List, Set
+from typing import Annotated, Any, Callable, List, Set, TypeVar
 
 from pydantic import BaseModel, ConfigDict, Field, model_validator
 
 CommandType = List[List[str]]
+T = TypeVar("T")
 
 # Define whitelist of allowed commands
 PERMITTED_COMMANDS: Set[str] = {"git", "python", "pip", "gh"}
@@ -26,7 +28,19 @@ class BootstrapCommands(BaseModel):
         self.cmds = processed_commands
         return self
 
+    def handle_exceptions(func: Callable[..., T]) -> Callable[..., T]:
+        @wraps(func)
+        def wrapper(*args: Any, **kwargs: Any) -> T:
+            try:
+                return func(*args, **kwargs)
+            except Exception as e:
+                print(f"Unexpected error: {str(e)}")
+                raise
+
+        return wrapper
+
     @model_validator(mode="after")
+    @handle_exceptions
     def validate_commands_exist(self) -> "BootstrapCommands":
         for cmd in self.cmds:
             if shutil.which(cmd[0]) is None:
@@ -35,6 +49,7 @@ class BootstrapCommands(BaseModel):
                 raise ValueError(f"Command '{cmd[0]}' is not in the permitted commands list")
         return self
 
+    @handle_exceptions
     def run_commands(self) -> None:
         cmd = self.cmds[0]
         with Popen(cmd, stdin=PIPE, stderr=PIPE) as process:
