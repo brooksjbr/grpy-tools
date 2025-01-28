@@ -1,7 +1,7 @@
 import logging
 import unittest
 
-from src.grpy.dev_tools.logger import Logger
+from src.grpy.tools.logger import Logger
 
 
 class TestLogger(unittest.TestCase):
