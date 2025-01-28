@@ -3,7 +3,7 @@ from pathlib import Path
 import pytest
 from pydantic import ValidationError
 
-from src.grpy.dev_tools.bootstrap_path import BootstrapPath
+from src.grpy.tools.bootstrap_path import BootstrapPath
 
 
 @pytest.fixture

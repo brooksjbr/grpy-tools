@@ -3,7 +3,7 @@ from unittest.mock import Mock, patch
 
 import pytest
 
-from src.grpy.dev_tools.bootstrap_commands import BootstrapCommands
+from src.grpy.tools.bootstrap_commands import BootstrapCommands
 
 
 @pytest.fixture
@@ -92,7 +92,7 @@ def test_non_whitelisted_command_raises_error():
 
 
 def test_bootstrap_commands_successful_run():
-    with patch("src.grpy.dev_tools.bootstrap_commands.Popen") as mock_popen:
+    with patch("src.grpy.tools.bootstrap_commands.Popen") as mock_popen:
         process_mock = Mock()
         process_mock.communicate.return_value = (b"mock output", b"")
         process_mock.returncode = 0
