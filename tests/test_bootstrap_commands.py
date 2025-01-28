@@ -41,9 +41,9 @@ def test_bootstrap_commands_validate_cmds_list():
 
 
 def test_bootstrap_commands_empty():
-    with pytest.raises(IndexError) as exc_info:
+    with pytest.raises(ValueError) as exc_info:
         BootstrapCommands(cmds=[]).run_commands()
-    assert "list index out of range" in str(exc_info.value)
+    assert "List should have at least 1 item after validation, not 0" in str(exc_info.value)
 
 
 def test_bootstrap_commands_nested_commands(nested_commands, formatted_commands):

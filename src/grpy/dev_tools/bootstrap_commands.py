@@ -5,20 +5,28 @@ from typing import Annotated, List, Set
 
 from pydantic import BaseModel, ConfigDict, Field, model_validator
 
-CommandType = List[List[str]]
+CommandType = List[str]
+CommandListType = List[CommandType]
 
 # Define whitelist of allowed commands
 PERMITTED_COMMANDS: Set[str] = {"git", "python", "pip", "gh"}
 
 
 class BootstrapCommands(BaseModel):
-    model_config = ConfigDict(strict=True, arbitrary_types_allowed=True)  # Allow Logger type
+    model_config = ConfigDict(strict=True, arbitrary_types_allowed=True)
 
-    cmds: Annotated[CommandType, Field()]
+    cmds: Annotated[CommandListType, Field(min_length=1)]
     logger: logging.Logger = Field(
         default_factory=lambda: logging.getLogger(__name__),
-        exclude=True,  # Exclude from serialization
+        exclude=True,
     )
+
+    @model_validator(mode="before")
+    @classmethod
+    def validate_cmds_type(cls, data: dict) -> dict:
+        if not isinstance(data.get("cmds"), list):
+            raise ValueError("cmds must be a list of commands")
+        return data
 
     @model_validator(mode="after")
     def format_command_strings(self) -> "BootstrapCommands":
@@ -40,8 +48,7 @@ class BootstrapCommands(BaseModel):
                 raise ValueError(f"Command '{cmd[0]}' is not in the permitted commands list")
         return self
 
-    def run_commands(self) -> None:
-        cmd = self.cmds[0]
+    def run_command(self, cmd: CommandType) -> None:
         with Popen(cmd, stdin=PIPE, stderr=PIPE) as process:
             self.logger.info(f"Executing command: {' '.join(cmd)}")
             cmd_result, err = process.communicate()
@@ -53,5 +60,7 @@ class BootstrapCommands(BaseModel):
                 self.logger.info(f"Command completed successfully: {' '.join(cmd)}")
                 self.logger.info(f"Output: {cmd_result}")
 
+    def run_commands(self) -> None:
+        for cmd in self.cmds:
+            self.run_command(cmd)
         self.logger.info("All commands executed successfully")
-        return None
