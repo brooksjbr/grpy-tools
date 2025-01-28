@@ -1,3 +1,4 @@
+import logging
 import shutil
 from subprocess import PIPE, Popen
 from typing import Annotated, List, Set
@@ -11,9 +12,13 @@ PERMITTED_COMMANDS: Set[str] = {"git", "python", "pip", "gh"}
 
 
 class BootstrapCommands(BaseModel):
-    model_config = ConfigDict(strict=True)
+    model_config = ConfigDict(strict=True, arbitrary_types_allowed=True)  # Allow Logger type
 
     cmds: Annotated[CommandType, Field()]
+    logger: logging.Logger = Field(
+        default_factory=lambda: logging.getLogger(__name__),
+        exclude=True,  # Exclude from serialization
+    )
 
     @model_validator(mode="after")
     def format_command_strings(self) -> "BootstrapCommands":
@@ -38,15 +43,15 @@ class BootstrapCommands(BaseModel):
     def run_commands(self) -> None:
         cmd = self.cmds[0]
         with Popen(cmd, stdin=PIPE, stderr=PIPE) as process:
-            print(f"Executing command: {' '.join(cmd)}")
+            self.logger.info(f"Executing command: {' '.join(cmd)}")
             cmd_result, err = process.communicate()
             return_code = process.returncode
             if return_code != 0:
                 process.kill()
                 raise RuntimeError(f"Command failed: {' '.join(cmd)}\nError: {err}")
             else:
-                print(f"Command completed successfully: {' '.join(cmd)}")
-                print(f"Output: {cmd_result}")
+                self.logger.info(f"Command completed successfully: {' '.join(cmd)}")
+                self.logger.info(f"Output: {cmd_result}")
 
-        print("All commands executed successfully")
+        self.logger.info("All commands executed successfully")
         return None
