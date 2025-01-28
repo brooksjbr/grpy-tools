@@ -1,4 +1,5 @@
 import logging
+import shlex
 import shutil
 from subprocess import PIPE, Popen
 from typing import Annotated, Callable, List, Set, TypeVar
@@ -38,8 +39,8 @@ class BootstrapCommands(BaseModel):
     def format_command_strings(self) -> "BootstrapCommands":
         processed_commands: CommandType = []
         for cmd in self.cmds:
-            if len(cmd) == 1 and " " in cmd[0]:
-                processed_commands.append(cmd[0].split())
+            if " " in cmd[0]:
+                processed_commands.append(shlex.split(cmd[0]))
             else:
                 processed_commands.append(cmd)
         self.cmds = processed_commands

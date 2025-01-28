@@ -19,7 +19,7 @@ def nested_commands():
 @pytest.fixture
 def formatted_commands():
     return [
-        ["pip", "install", "-e", "'.[dev]'"],
+        ["pip", "install", "-e", ".[dev]"],
         ["gh", "--help"],
         ["python", "--help"],
         ["git", "status"],
@@ -93,16 +93,13 @@ def test_non_whitelisted_command_raises_error():
 
 def test_bootstrap_commands_successful_run():
     with patch("src.grpy.dev_tools.bootstrap_commands.Popen") as mock_popen:
-        # Setup the mock process
         process_mock = Mock()
         process_mock.communicate.return_value = (b"mock output", b"")
         process_mock.returncode = 0
         mock_popen.return_value.__enter__.return_value = process_mock
 
-        # Create and run commands
         cb = BootstrapCommands(cmds=[["git", "status"]])
         cb.run_commands()
 
-        # Verify the command was called correctly
         mock_popen.assert_called_once_with(["git", "status"], stdin=PIPE, stderr=PIPE)
         process_mock.communicate.assert_called_once()
