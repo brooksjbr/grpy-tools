@@ -6,12 +6,15 @@ from typing import Annotated, Callable, ClassVar, TypeVar
 from pydantic import BaseModel, ConfigDict, Field, ValidationError, model_validator
 
 T = TypeVar("T")
-logger = logging.getLogger(__name__)
 
 
 class BootstrapPath(BaseModel, validate_assignment=True):
-    model_config = ConfigDict(strict=True)
+    model_config = ConfigDict(strict=True, arbitrary_types_allowed=True)
     target: Annotated[Path, Field(default_factory=Path.cwd)]
+    logger: logging.Logger = Field(
+        default_factory=lambda: logging.getLogger(__name__),
+        exclude=True,  # Exclude from serialization
+    )
 
     ERROR_ABSOLUTE_PATH: ClassVar[str] = "Path must be absolute: {}"
     ERROR_PATH_EXISTS: ClassVar[str] = "Path does not exist: {}"
@@ -23,7 +26,7 @@ class BootstrapPath(BaseModel, validate_assignment=True):
             try:
                 return validator_method(self, *args, **kwargs)
             except ValidationError as exc:
-                logger.error(f"Validation error: {exc.errors()[0]['type']}")
+                self.logger.error(f"Validation error: {exc.errors()[0]['type']}")
             return self
 
         return wrapper
