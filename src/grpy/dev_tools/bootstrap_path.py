@@ -21,7 +21,7 @@ class BootstrapPath(BaseModel, validate_assignment=True):
     ERROR_PATH_READABLE: ClassVar[str] = "Path is not readable: {}"
     ERROR_NOT_DIRECTORY: ClassVar[str] = "Path must be a directory: {}"
 
-    def check_validation(validator_method: Callable[..., T]) -> Callable[..., T]:
+    def handle_exception(validator_method: Callable[..., T]) -> Callable[..., T]:
         def wrapper(self, *args, **kwargs):
             try:
                 return validator_method(self, *args, **kwargs)
@@ -32,7 +32,7 @@ class BootstrapPath(BaseModel, validate_assignment=True):
         return wrapper
 
     @model_validator(mode="after")
-    @check_validation
+    @handle_exception
     def validate_path(self):
         if not os.access(self.target, os.R_OK):
             raise ValueError(self.ERROR_PATH_READABLE.format(self.target))

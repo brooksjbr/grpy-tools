@@ -1,15 +1,17 @@
 import logging
 import shutil
 from subprocess import PIPE, Popen
-from typing import Annotated, List, Set
+from typing import Annotated, Callable, List, Set, TypeVar
 
-from pydantic import BaseModel, ConfigDict, Field, model_validator
+from pydantic import BaseModel, ConfigDict, Field, ValidationError, model_validator
 
 CommandType = List[str]
 CommandListType = List[CommandType]
 
 # Define whitelist of allowed commands
 PERMITTED_COMMANDS: Set[str] = {"git", "python", "pip", "gh"}
+
+T = TypeVar("T")
 
 
 class BootstrapCommands(BaseModel):
@@ -21,14 +23,18 @@ class BootstrapCommands(BaseModel):
         exclude=True,
     )
 
-    @model_validator(mode="before")
-    @classmethod
-    def validate_cmds_type(cls, data: dict) -> dict:
-        if not isinstance(data.get("cmds"), list):
-            raise ValueError("cmds must be a list of commands")
-        return data
+    def handle_exception(validator_method: Callable[..., T]) -> Callable[..., T]:
+        def wrapper(self, *args, **kwargs):
+            try:
+                return validator_method(self, *args, **kwargs)
+            except ValidationError as exc:
+                self.logger.error(f"Error: {str(exc)}")
+            return self
+
+        return wrapper
 
     @model_validator(mode="after")
+    @handle_exception
     def format_command_strings(self) -> "BootstrapCommands":
         processed_commands: CommandType = []
         for cmd in self.cmds:
@@ -40,6 +46,7 @@ class BootstrapCommands(BaseModel):
         return self
 
     @model_validator(mode="after")
+    @handle_exception
     def validate_commands_exist(self) -> "BootstrapCommands":
         for cmd in self.cmds:
             if shutil.which(cmd[0]) is None:
@@ -48,6 +55,7 @@ class BootstrapCommands(BaseModel):
                 raise ValueError(f"Command '{cmd[0]}' is not in the permitted commands list")
         return self
 
+    @handle_exception
     def run_command(self, cmd: CommandType) -> None:
         with Popen(cmd, stdin=PIPE, stderr=PIPE) as process:
             self.logger.info(f"Executing command: {' '.join(cmd)}")
@@ -60,6 +68,7 @@ class BootstrapCommands(BaseModel):
                 self.logger.info(f"Command completed successfully: {' '.join(cmd)}")
                 self.logger.info(f"Output: {cmd_result}")
 
+    @handle_exception
     def run_commands(self) -> None:
         for cmd in self.cmds:
             self.run_command(cmd)
