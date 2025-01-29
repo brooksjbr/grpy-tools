@@ -2,7 +2,7 @@ import logging
 import shlex
 import shutil
 from subprocess import PIPE, Popen
-from typing import Annotated, Callable, List, Set, TypeVar
+from typing import Annotated, Callable, List, Optional, Set, TypeVar
 
 from pydantic import BaseModel, ConfigDict, Field, ValidationError, model_validator
 
@@ -19,6 +19,7 @@ class CommandTool(BaseModel):
     model_config = ConfigDict(strict=True, arbitrary_types_allowed=True)
 
     cmds: Annotated[CommandListType, Field(min_length=1)]
+    timeout: Optional[float] = Field(default=2.0, gt=0, description="Command timeout in seconds")
     logger: logging.Logger = Field(
         default_factory=lambda: logging.getLogger(__name__),
         exclude=True,
@@ -57,7 +58,7 @@ class CommandTool(BaseModel):
     def run_command(self, cmd: CommandType) -> None:
         with Popen(cmd, stdin=PIPE, stderr=PIPE) as process:
             self.logger.info(f"Executing command: {' '.join(cmd)}")
-            cmd_result, err = process.communicate()
+            cmd_result, err = process.communicate(timeout=self.timeout)
             return_code = process.returncode
             if return_code != 0:
                 process.kill()
