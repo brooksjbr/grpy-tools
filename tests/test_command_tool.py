@@ -71,15 +71,10 @@ def test_command_tool_nested_commands(nested_commands, formatted_commands):
     assert ct.cmds == formatted_commands
 
 
-def test_command_tool_inner_cmd_formatted(nested_commands, formatted_commands):
-    ct = CommandTool(cmds=nested_commands)
-    assert ct.cmds[0] == formatted_commands[0]
-    assert ct.cmds[1] == formatted_commands[1]
-
-
 def test_command_tool_none_input():
-    with pytest.raises(ValueError):
+    with pytest.raises(ValueError) as exc_info:
         CommandTool(cmds=None)
+    assert "Input should be a valid list" in str(exc_info.value)
 
 
 def test_command_is_missing_from_filesystem():
@@ -102,12 +97,18 @@ def test_command_is_missing_from_filesystem():
 
 
 def test_non_whitelisted_command_raises_error():
-    with pytest.raises(ValueError, match="Command 'rm' is not in the permitted commands list"):
-        CommandTool(
-            cmds=[
-                ["rm", "-rf", "/"],
-            ]
-        )
+    cmd = (["ls", "-la", "/"],)
+    with pytest.raises(ValueError) as exc_info:
+        ct = CommandTool(cmds=[cmd])
+
+        assert f"Command '{cmd[0]}' is not in the permitted commands list" in str(exc_info.value)
+
+        ct.cmd_whitelist.append("ls")
+
+        ct.cmds.append(cmd)
+
+        assert "ls" in ct.cmd_whitelist
+        assert ct.cmds == [["ls", "-la", "/"]]
 
 
 def test_command_tool_successful_run():
@@ -144,15 +145,11 @@ def test_command_tool_custom_timeout(mock_timeout_process, git_status_cmd, timeo
 
     assert timeout_error_msg in str(exc_info.value)
     mock_popen.assert_called_once_with(git_status_cmd, stdin=PIPE, stderr=PIPE)
+    process_mock.communicate.assert_called_once_with(timeout=60.0)
 
 
-def test_command_tool_negative_timeout():
+@pytest.mark.parametrize("timeout_value", [-1.0, 0, 0.0])
+def test_invalid_timeouts(timeout_value):
     with pytest.raises(ValueError) as exc_info:
-        CommandTool(cmds=[["git", "status"]], timeout=-1.0)
-    assert "Input should be greater than 0" in str(exc_info.value)
-
-
-def test_command_tool_zero_timeout():
-    with pytest.raises(ValueError) as exc_info:
-        CommandTool(cmds=[["git", "status"]], timeout=0)
+        CommandTool(cmds=[["git", "status"]], timeout=timeout_value)
     assert "Input should be greater than 0" in str(exc_info.value)

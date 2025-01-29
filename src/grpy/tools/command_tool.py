@@ -2,15 +2,13 @@ import logging
 import shlex
 import shutil
 from subprocess import PIPE, Popen
-from typing import Annotated, Callable, List, Optional, Set, TypeVar
+from typing import Annotated, Callable, List, Optional, TypeVar
 
 from pydantic import BaseModel, ConfigDict, Field, ValidationError, model_validator
 
 CommandType = List[str]
 CommandListType = List[CommandType]
 
-# Define whitelist of allowed commands
-PERMITTED_COMMANDS: Set[str] = {"git", "python", "pip", "gh"}
 
 T = TypeVar("T")
 
@@ -24,6 +22,8 @@ class CommandTool(BaseModel):
         default_factory=lambda: logging.getLogger(__name__),
         exclude=True,
     )
+
+    cmd_whitelist: List[str] = ["git", "python", "pip", "gh"]
 
     def handle_exception(validator_method: Callable[..., T]) -> Callable[..., T]:
         def wrapper(self, *args, **kwargs):
@@ -44,7 +44,7 @@ class CommandTool(BaseModel):
 
             if shutil.which(formatted_cmd[0]) is None:
                 raise ValueError(f"Command '{formatted_cmd[0]}' not found in system PATH")
-            if formatted_cmd[0] not in PERMITTED_COMMANDS:
+            if formatted_cmd[0] not in self.cmd_whitelist:
                 raise ValueError(
                     f"Command '{formatted_cmd[0]}' is not in the permitted commands list"
                 )
