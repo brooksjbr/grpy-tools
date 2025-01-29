@@ -26,11 +26,30 @@ def formatted_commands():
     ]
 
 
+@pytest.fixture
+def git_status_cmd():
+    return ["git", "status"]
+
+
+@pytest.fixture
+def timeout_error_msg():
+    return "Command timed out"
+
+
+@pytest.fixture
+def mock_timeout_process(timeout_error_msg):
+    with patch("src.grpy.tools.command_tool.Popen") as mock_popen:
+        process_mock = Mock()
+        process_mock.communicate.side_effect = TimeoutError(timeout_error_msg)
+        mock_popen.return_value.__enter__.return_value = process_mock
+        yield mock_popen, process_mock
+
+
 def test_command_tool_init(nested_commands):
-    cb = CommandTool(cmds=[nested_commands[0]])
-    assert isinstance(cb, CommandTool)
-    assert isinstance(cb.cmds, list)
-    for cmd in cb.cmds:
+    ct = CommandTool(cmds=[nested_commands[0]])
+    assert isinstance(ct, CommandTool)
+    assert isinstance(ct.cmds, list)
+    for cmd in ct.cmds:
         assert isinstance(cmd, list)
 
 
@@ -47,15 +66,15 @@ def test_command_tool_empty():
 
 
 def test_command_tool_nested_commands(nested_commands, formatted_commands):
-    cb = CommandTool(cmds=nested_commands)
-    assert len(cb.cmds) == 4
-    assert cb.cmds == formatted_commands
+    ct = CommandTool(cmds=nested_commands)
+    assert len(ct.cmds) == 4
+    assert ct.cmds == formatted_commands
 
 
 def test_command_tool_inner_cmd_formatted(nested_commands, formatted_commands):
-    cb = CommandTool(cmds=nested_commands)
-    assert cb.cmds[0] == formatted_commands[0]
-    assert cb.cmds[1] == formatted_commands[1]
+    ct = CommandTool(cmds=nested_commands)
+    assert ct.cmds[0] == formatted_commands[0]
+    assert ct.cmds[1] == formatted_commands[1]
 
 
 def test_command_tool_none_input():
@@ -98,8 +117,42 @@ def test_command_tool_successful_run():
         process_mock.returncode = 0
         mock_popen.return_value.__enter__.return_value = process_mock
 
-        cb = CommandTool(cmds=[["git", "status"]])
-        cb.run_commands()
+        ct = CommandTool(cmds=[["git", "status"]])
+        ct.run_commands()
 
         mock_popen.assert_called_once_with(["git", "status"], stdin=PIPE, stderr=PIPE)
         process_mock.communicate.assert_called_once()
+
+
+def test_command_tool_default_timeout(mock_timeout_process, git_status_cmd):
+    mock_popen, process_mock = mock_timeout_process
+    ct = CommandTool(cmds=[git_status_cmd])
+    with pytest.raises(TimeoutError):
+        ct.run_commands()
+
+    mock_popen.assert_called_once_with(git_status_cmd, stdin=PIPE, stderr=PIPE)
+    process_mock.communicate.assert_called_once_with(timeout=2.0)
+
+
+def test_command_tool_custom_timeout(mock_timeout_process, git_status_cmd, timeout_error_msg):
+    mock_popen, process_mock = mock_timeout_process
+    ct = CommandTool(cmds=[git_status_cmd], timeout=60.0)
+    assert ct.timeout == 60.0
+
+    with pytest.raises(TimeoutError) as exc_info:
+        ct.run_commands()
+
+    assert timeout_error_msg in str(exc_info.value)
+    mock_popen.assert_called_once_with(git_status_cmd, stdin=PIPE, stderr=PIPE)
+
+
+def test_command_tool_negative_timeout():
+    with pytest.raises(ValueError) as exc_info:
+        CommandTool(cmds=[["git", "status"]], timeout=-1.0)
+    assert "Input should be greater than 0" in str(exc_info.value)
+
+
+def test_command_tool_zero_timeout():
+    with pytest.raises(ValueError) as exc_info:
+        CommandTool(cmds=[["git", "status"]], timeout=0)
+    assert "Input should be greater than 0" in str(exc_info.value)
