@@ -15,7 +15,7 @@ PERMITTED_COMMANDS: Set[str] = {"git", "python", "pip", "gh"}
 T = TypeVar("T")
 
 
-class BootstrapCommands(BaseModel):
+class CommandTool(BaseModel):
     model_config = ConfigDict(strict=True, arbitrary_types_allowed=True)
 
     cmds: Annotated[CommandListType, Field(min_length=1)]
@@ -36,7 +36,7 @@ class BootstrapCommands(BaseModel):
 
     @model_validator(mode="after")
     @handle_exception
-    def format_command_strings(self) -> "BootstrapCommands":
+    def format_command_strings(self) -> "CommandTool":
         processed_commands: CommandType = []
         for cmd in self.cmds:
             if " " in cmd[0]:
@@ -48,7 +48,7 @@ class BootstrapCommands(BaseModel):
 
     @model_validator(mode="after")
     @handle_exception
-    def validate_commands_exist(self) -> "BootstrapCommands":
+    def validate_commands_exist(self) -> "CommandTool":
         for cmd in self.cmds:
             if shutil.which(cmd[0]) is None:
                 raise ValueError(f"Command '{cmd[0]}' not found in system PATH")

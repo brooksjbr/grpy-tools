@@ -8,7 +8,7 @@ from pydantic import BaseModel, ConfigDict, Field, ValidationError, model_valida
 T = TypeVar("T")
 
 
-class BootstrapPath(BaseModel, validate_assignment=True):
+class PathTool(BaseModel, validate_assignment=True):
     model_config = ConfigDict(strict=True, arbitrary_types_allowed=True)
     target: Annotated[Path, Field(default_factory=Path.cwd)]
     logger: logging.Logger = Field(
