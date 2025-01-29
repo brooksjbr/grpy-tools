@@ -3,7 +3,7 @@ from pathlib import Path
 import pytest
 from pydantic import ValidationError
 
-from src.grpy.tools.bootstrap_path import BootstrapPath
+from src.grpy.tools.path_tool import PathTool
 
 
 @pytest.fixture
@@ -23,61 +23,61 @@ def mock_cwd(monkeypatch, generate_path):
     return generate_path
 
 
-def test_bootstrap_path_init_with_default_cwd(mock_cwd, generate_path):
-    bp = BootstrapPath()
+def test_path_tool_init_with_default_cwd(mock_cwd, generate_path):
+    pt = PathTool()
 
-    assert isinstance(bp, BootstrapPath)
-    assert bp.target == generate_path
+    assert isinstance(pt, PathTool)
+    assert pt.target == generate_path
 
 
-def test_bootstrap_path_update_target_after_init(mock_cwd, tmp_path_factory):
+def test_path_tool_update_target_after_init(mock_cwd, tmp_path_factory):
     path2 = tmp_path_factory.mktemp("path2")
 
-    bootstrap_path = BootstrapPath()
-    bootstrap_path.target = path2
+    path_tool = PathTool()
+    path_tool.target = path2
 
-    assert bootstrap_path.target == path2
+    assert path_tool.target == path2
 
 
-def test_bootstrap_path_path_unreadable(invalid_path):
+def test_path_tool_path_unreadable(invalid_path):
     with pytest.raises(ValidationError) as exc_info:
-        BootstrapPath(target=invalid_path)
+        PathTool(target=invalid_path)
     assert f"Path is not readable: {invalid_path}" in str(exc_info.value)
 
 
-def test_bootstrap_path_invalid_type():
+def test_path_tool_invalid_type():
     with pytest.raises(ValidationError) as exc_info:
-        BootstrapPath(target=123)
+        PathTool(target=123)
 
     assert "Input should be an instance of Path" in str(exc_info.value)
 
 
-def test_bootstrap_path_multiple_updates(mock_cwd, tmp_path_factory):
+def test_path_tool_multiple_updates(mock_cwd, tmp_path_factory):
     path1 = tmp_path_factory.mktemp("path1")
     path2 = tmp_path_factory.mktemp("path2")
     path3 = tmp_path_factory.mktemp("path3")
 
-    bp = BootstrapPath(target=path1)
-    assert bp.target == path1
+    pt = PathTool(target=path1)
+    assert pt.target == path1
 
-    bp.target = path2
-    assert bp.target == path2
+    pt.target = path2
+    assert pt.target == path2
 
-    bp.target = path3
-    assert bp.target == path3
+    pt.target = path3
+    assert pt.target == path3
 
 
-def test_bootstrap_path_relative_path(mock_cwd):
+def test_path_tool_relative_path(mock_cwd):
     relative_path = Path("./test_dir")
     relative_path.mkdir(exist_ok=True)
 
     with pytest.raises(ValidationError):
-        BootstrapPath(target=relative_path)
+        PathTool(target=relative_path)
 
     relative_path.rmdir()
 
 
-def test_bootstrap_path_rejects_file(tmp_path_factory):
+def test_path_tool_rejects_file(tmp_path_factory):
     tmp_dir = tmp_path_factory.mktemp("test_dir")
     tmp_file = tmp_dir / "test.txt"
     tmp_file.write_text("test content")
@@ -85,6 +85,6 @@ def test_bootstrap_path_rejects_file(tmp_path_factory):
     tmp_file.chmod(0o644)
 
     with pytest.raises(ValueError) as exc_info:
-        BootstrapPath(target=tmp_file)
+        PathTool(target=tmp_file)
 
-    assert BootstrapPath.ERROR_NOT_DIRECTORY.format(tmp_file) in str(exc_info.value)
+    assert PathTool.ERROR_NOT_DIRECTORY.format(tmp_file) in str(exc_info.value)
