@@ -36,24 +36,21 @@ class CommandTool(BaseModel):
 
     @model_validator(mode="after")
     @handle_exception
-    def format_command_strings(self) -> "CommandTool":
+    def validate_commands(self) -> "CommandTool":
         processed_commands: CommandType = []
         for cmd in self.cmds:
-            if " " in cmd[0]:
-                processed_commands.append(shlex.split(cmd[0]))
-            else:
-                processed_commands.append(cmd)
-        self.cmds = processed_commands
-        return self
+            formatted_cmd = shlex.split(cmd[0]) if " " in cmd[0] else cmd
 
-    @model_validator(mode="after")
-    @handle_exception
-    def validate_commands_exist(self) -> "CommandTool":
-        for cmd in self.cmds:
-            if shutil.which(cmd[0]) is None:
-                raise ValueError(f"Command '{cmd[0]}' not found in system PATH")
-            if cmd[0] not in PERMITTED_COMMANDS:
-                raise ValueError(f"Command '{cmd[0]}' is not in the permitted commands list")
+            if shutil.which(formatted_cmd[0]) is None:
+                raise ValueError(f"Command '{formatted_cmd[0]}' not found in system PATH")
+            if formatted_cmd[0] not in PERMITTED_COMMANDS:
+                raise ValueError(
+                    f"Command '{formatted_cmd[0]}' is not in the permitted commands list"
+                )
+
+            processed_commands.append(formatted_cmd)
+
+        self.cmds = processed_commands
         return self
 
     @handle_exception
