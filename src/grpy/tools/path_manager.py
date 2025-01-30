@@ -6,9 +6,13 @@ from typing import Annotated, Callable, ClassVar, TypeVar
 from pydantic import BaseModel, ConfigDict, Field, ValidationError, model_validator
 
 T = TypeVar("T")
+# Defining a return type for instances of this class
+# This implemention is required to support Python version 3.9 and 3.10
+# Typing includes type Self beginning in version 3.11
+SelfPM = TypeVar("SelfPM", bound="PathManager")
 
 
-class PathTool(BaseModel, validate_assignment=True):
+class PathManager(BaseModel, validate_assignment=True):
     model_config = ConfigDict(strict=True, arbitrary_types_allowed=True)
     target: Annotated[Path, Field(default_factory=Path.cwd)]
     logger: logging.Logger = Field(
@@ -33,7 +37,7 @@ class PathTool(BaseModel, validate_assignment=True):
 
     @model_validator(mode="after")
     @handle_exception
-    def validate_path(self):
+    def validate_path(self) -> SelfPM:
         if not os.access(self.target, os.R_OK):
             raise ValueError(self.ERROR_PATH_READABLE.format(self.target))
 
