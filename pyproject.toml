@@ -34,7 +34,7 @@ dev = [
 ]
 
 [tool.hatch.build.targets.wheel]
-packages = ["src/grpy.tools"]
+packages = ["src/grpy"]
 
 [tool.hatch.build]
 dev-mode-exact = true
