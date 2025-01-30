@@ -11,7 +11,7 @@ CommandListType = List[CommandType]
 
 
 T = TypeVar("T")
-# This TypeVar is defining a return of type for an instance of CommandManager
+# Defining a return type for instances of this class
 # This implemention is required to support Python version 3.9 and 3.10
 # Typing includes type Self beginning in version 3.11
 SelfCM = TypeVar("TCommandManager", bound="CommandManager")
