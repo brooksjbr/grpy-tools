@@ -2,7 +2,7 @@ import logging
 import shlex
 import shutil
 from subprocess import PIPE, Popen
-from typing import Annotated, Callable, List, Optional, Self, TypeVar
+from typing import Annotated, Callable, List, Optional, TypeVar
 
 from pydantic import BaseModel, ConfigDict, Field, ValidationError, model_validator
 
@@ -11,6 +11,10 @@ CommandListType = List[CommandType]
 
 
 T = TypeVar("T")
+# This TypeVar is defining a return of type for an instance of CommandManager
+# This implemention is required to support Python version 3.9 and 3.10
+# Typing includes type Self beginning in version 3.11
+SelfCM = TypeVar("TCommandManager", bound="CommandManager")
 
 
 class CommandManager(BaseModel):
@@ -36,7 +40,7 @@ class CommandManager(BaseModel):
 
     @model_validator(mode="after")
     @handle_exception
-    def validate_commands(self) -> Self:
+    def validate_commands(self) -> SelfCM:
         processed_commands: CommandType = []
         for cmd in self.cmds:
             formatted_cmd = shlex.split(cmd[0]) if " " in cmd[0] else cmd
