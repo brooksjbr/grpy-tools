@@ -11,18 +11,21 @@ CommandListType = List[CommandType]
 
 
 T = TypeVar("T")
+# This TypeVar is defining a return of type for an instance of CommandManager
+# This implemention is required to support Python version 3.9 and 3.10
+# Typing includes type Self beginning in version 3.11
+SelfCM = TypeVar("TCommandManager", bound="CommandManager")
 
 
-class CommandTool(BaseModel):
+class CommandManager(BaseModel):
     model_config = ConfigDict(strict=True, arbitrary_types_allowed=True)
-
     cmds: Annotated[CommandListType, Field(min_length=1)]
     timeout: Optional[float] = Field(default=2.0, gt=0, description="Command timeout in seconds")
     logger: logging.Logger = Field(
         default_factory=lambda: logging.getLogger(__name__),
         exclude=True,
     )
-
+    # TODO: add pydantic field support, exclude=True
     cmd_whitelist: List[str] = ["git", "python", "pip", "gh"]
 
     def handle_exception(validator_method: Callable[..., T]) -> Callable[..., T]:
@@ -37,7 +40,7 @@ class CommandTool(BaseModel):
 
     @model_validator(mode="after")
     @handle_exception
-    def validate_commands(self) -> "CommandTool":
+    def validate_commands(self) -> SelfCM:
         processed_commands: CommandType = []
         for cmd in self.cmds:
             formatted_cmd = shlex.split(cmd[0]) if " " in cmd[0] else cmd
