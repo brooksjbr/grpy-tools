@@ -1,48 +1,73 @@
-import logging
-import unittest
+import pytest
 
-from src.grpy.tools.log_manager import LogManager
-
-
-class TestLogManafer(unittest.TestCase):
-    def setUp(self):
-        # Reset the singleton instance between tests
-        LogManager._instance = None
-        LogManager._logger = None
-        # Clear any existing handlers from the root logger
-        if LogManager._logger:
-            LogManager._logger.handlers.clear()
-
-    def test_singleton_pattern(self):
-        lm1 = LogManager()
-        lm2 = LogManager()
-        self.assertIs(lm1, lm2)
-        self.assertEqual(len(lm1.logger.handlers), 1)
-
-    def test_logger_initialization(self):
-        lm = LogManager()
-        self.assertIsNotNone(lm.logger)
-        self.assertIsInstance(lm, LogManager)
-        self.assertEqual(lm.logger.name, "grpy.tools.log_manager")
-
-    def test_logger_configuration(self):
-        lm = LogManager()
-        self.assertEqual(lm.logger.level, logging.INFO)
-        self.assertEqual(len(lm.logger.handlers), 1)
-
-        handler = lm.logger.handlers[0]
-        self.assertIsInstance(handler, logging.StreamHandler)
-
-        formatter = handler.formatter
-        self.assertEqual(formatter._fmt, "%(asctime)s - %(levelname)s - %(message)s")
-        self.assertEqual(formatter.datefmt, "%Y-%m-%d")
-
-    def test_logger_property_access(self):
-        lm = LogManager()
-        logger_instance1 = lm.logger
-        logger_instance2 = lm.logger
-        self.assertIs(logger_instance1, logger_instance2)
+from grpy.tools.log_manager import LogManager
 
 
-if __name__ == "__main__":
-    unittest.main()
+@pytest.fixture(autouse=True)
+def cleanup():
+    LogManager._instance = None
+    LogManager._logger = None
+    yield
+
+
+def test_log_handle_init():
+    lm = LogManager(log_handle="_test")
+    assert lm.log_handle == "_test"
+
+
+def test_log_handle_default_value():
+    lm = LogManager()
+    assert isinstance(lm.log_handle, str)
+    assert len(lm.log_handle) >= 4
+    assert len(lm.log_handle) <= 50
+    assert lm.log_handle == "_custom_logger"
+
+
+def test_log_handle_validation_min_length():
+    with pytest.raises(ValueError) as exc_info:
+        LogManager(log_handle="abc")
+    assert "string_too_short" in str(exc_info.value).lower()
+    assert "4" in str(exc_info.value)
+
+
+def test_log_handle_validation_max_length():
+    with pytest.raises(ValueError) as exc_info:
+        LogManager(log_handle="a" * 51)
+    assert "string_too_long" in str(exc_info.value).lower()
+    assert "50" in str(exc_info.value)
+
+    valid_handle = "a" * 50
+    lm = LogManager(log_handle=valid_handle)
+    assert len(lm.log_handle) == 50
+
+
+def test_log_handle_value_frozen():
+    lm = LogManager()
+    with pytest.raises(ValueError) as exc_info:
+        lm.log_handle = "_test"
+    assert "frozen" in str(exc_info.value).lower()
+    assert lm.log_handle == "_custom_logger"
+
+
+def test_log_handle_exactly_min_length():
+    lm = LogManager(log_handle="abcd")
+    assert lm.log_handle == "abcd"
+
+
+def test_log_handle_exactly_max_length():
+    handle_50_chars = "a" * 50
+    lm = LogManager(log_handle=handle_50_chars)
+    assert lm.log_handle == handle_50_chars
+
+
+def test_singleton_pattern():
+    lm1 = LogManager()
+    lm2 = LogManager()
+    assert lm1 is lm2
+
+
+def test_logger_property_access():
+    lm = LogManager()
+    logger_instance1 = lm.logger
+    logger_instance2 = lm.logger
+    assert logger_instance1 is logger_instance2
