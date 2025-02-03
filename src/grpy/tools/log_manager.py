@@ -10,8 +10,20 @@ class LogManager(BaseModel):
     model_config = ConfigDict(arbitrary_types_allowed=True)
 
     log_handle: Annotated[
-        str, Field(description="Log handle", max_length=50, min_length=4, frozen=True)
+        str,
+        Field(
+            description="Log handle, default to _custom_logger if omitted",
+            max_length=50,
+            min_length=4,
+            frozen=True,
+        ),
     ] = "_custom_logger"
+    log_level: Annotated[
+        str,
+        Field(
+            description="Log level for the logger instance",
+        ),
+    ] = "INFO"
 
     def __new__(cls, *args, **kwargs) -> SelfLM:
         if not hasattr(cls, "_instance"):
@@ -23,9 +35,10 @@ class LogManager(BaseModel):
         if self._logger is None:
             self._logger = logging.getLogger(self.log_handle)
 
-    def __init__(self, log_handle: str = "_custom_logger") -> None:
-        super().__init__(log_handle=log_handle)
+    def __init__(self, log_handle: str = "_custom_logger", log_level: str = "INFO") -> None:
+        super().__init__(log_handle=log_handle, log_level=log_level)
         self._setup_logger()
+        self._logger.setLevel(log_level)
 
         if not self._logger.handlers:
             handler = logging.StreamHandler()
