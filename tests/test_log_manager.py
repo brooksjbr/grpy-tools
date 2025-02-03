@@ -3,15 +3,16 @@ import pytest
 from grpy.tools.log_manager import LogManager
 
 
-@pytest.fixture(autouse=True)
-def cleanup():
-    LogManager._logger = None
-    yield
+def test_log_manager_initialization_defaults():
+    lm = LogManager()
+    assert lm.log_handle == "_custom_logger"
+    assert lm.log_level == "INFO"
 
 
-def test_log_handle_init():
+def test_log_handle_custom_handle_init():
     lm = LogManager(log_handle="_test")
     assert lm.log_handle == "_test"
+    assert lm.log_level == "INFO"
 
 
 def test_log_handle_default_value():
@@ -70,3 +71,21 @@ def test_logger_property_access():
     logger_instance1 = lm.logger
     logger_instance2 = lm.logger
     assert logger_instance1 is logger_instance2
+
+
+def test_log_manager_debug_level():
+    lm = LogManager(log_level="DEBUG")
+    assert lm.log_level == "DEBUG"
+
+
+def test_update_log_level():
+    lm = LogManager()
+    assert lm.log_level == "INFO"
+    lm.log_level = "DEBUG"
+    assert lm.log_level == "DEBUG"
+
+
+def test_invalid_log_level():
+    with pytest.raises(ValueError) as exc_info:
+        LogManager(log_level="UNKNOWN_LEVEL")
+    assert "UNKNOWN_LEVEL" in str(exc_info.value)
