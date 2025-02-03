@@ -5,7 +5,6 @@ from grpy.tools.log_manager import LogManager
 
 @pytest.fixture(autouse=True)
 def cleanup():
-    LogManager._instance = None
     LogManager._logger = None
     yield
 
