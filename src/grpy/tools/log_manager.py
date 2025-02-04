@@ -5,11 +5,17 @@ from pydantic import BaseModel, ConfigDict, Field
 
 SelfLM = TypeVar("SelfLM", bound="LogManager")
 
-from enum import Enum
+from typing import Literal
+
+HANDLER_TYPE = Literal["STREAM"]
+HANDLER_MAPPING: dict[HANDLER_TYPE, type[logging.Handler]] = {"STREAM": logging.StreamHandler}
 
 
-class LogHandlers(Enum):
-    STREAM = "StreamHandler"
+class LogHandler:
+    handler_type: HANDLER_TYPE = "STREAM"
+
+    def create_handler(self, handler_type: HANDLER_TYPE = "STREAM") -> logging.Handler:
+        return HANDLER_MAPPING[handler_type]()
 
 
 class LogManagerSingleton(object):
@@ -29,7 +35,7 @@ class LogManager(BaseModel, LogManagerSingleton):
 
     log_handle: Annotated[str, Field(frozen=True)] = "_custom_logger"
     log_level: Annotated[str, Field()] = "INFO"
-    log_handler: Annotated[LogHandlers, Field(default=LogHandlers.STREAM)]
+    log_handler: Annotated[LogHandler, Field(default=LogHandler())]
 
     def __init__(self, **data: Any) -> None:
         super().__init__(**data)
@@ -38,11 +44,7 @@ class LogManager(BaseModel, LogManagerSingleton):
         self._setup_handler()
 
     def _setup_handler(self):
-        if self.log_handler == LogHandlers.STREAM:
-            self.create_stream_handler()
-
-    def create_stream_handler(self) -> None:
-        handler = logging.StreamHandler()
+        handler = self.log_handler.create_handler()
         formatter = logging.Formatter(
             "%(asctime)s - %(levelname)s - %(message)s",
             datefmt="%Y-%m-%d",
