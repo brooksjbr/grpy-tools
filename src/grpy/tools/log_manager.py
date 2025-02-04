@@ -7,29 +7,16 @@ SelfLM = TypeVar("SelfLM", bound="LogManager")
 
 
 class LogManager(BaseModel):
-    model_config = ConfigDict(arbitrary_types_allowed=True)
+    model_config = ConfigDict(
+        arbitrary_types_allowed=True,
+        str_min_length=4,
+        str_max_length=50,
+        str_strip_whitespace=True,
+    )
 
-    log_handle: Annotated[
-        str,
-        Field(
-            description="Log handle, default to _custom_logger if omitted",
-            max_length=50,
-            min_length=4,
-            frozen=True,
-        ),
-    ] = "_custom_logger"
-    log_level: Annotated[
-        str,
-        Field(
-            description="Log level for the logger instance",
-        ),
-    ] = "INFO"
-    handler_type: Annotated[
-        str,
-        Field(
-            description="Type of handler to use for logging",
-        ),
-    ] = "stream"
+    log_handle: Annotated[str, Field(frozen=True)] = "_custom_logger"
+    log_level: Annotated[str, Field()] = "INFO"
+    handler_type: Annotated[str, Field()] = "stream"
 
     def __new__(cls, *args, **kwargs) -> SelfLM:
         if not hasattr(cls, "_instance"):
