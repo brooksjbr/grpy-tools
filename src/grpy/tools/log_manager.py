@@ -25,15 +25,10 @@ class LogManager(BaseModel, LogManagerSingleton):
     log_level: Annotated[str, Field()] = "INFO"
     handler_type: Annotated[str, Field()] = "stream"
 
-    def __init__(
-        self,
-        log_handle: str = "_custom_logger",
-        log_level: str = "INFO",
-        handler_type: str = "stream",
-    ) -> None:
-        super().__init__(log_handle=log_handle, log_level=log_level, handler_type=handler_type)
+    def __init__(self, **data: Any) -> None:
+        super().__init__(**data)
         self._setup_logger()
-        self._logger.setLevel(log_level)
+        self._logger.setLevel(self.log_level)
         self._setup_handler()
 
     def _setup_handler(self):
