@@ -5,6 +5,12 @@ from pydantic import BaseModel, ConfigDict, Field
 
 SelfLM = TypeVar("SelfLM", bound="LogManager")
 
+from enum import Enum
+
+
+class LogHandlers(Enum):
+    STREAM = "StreamHandler"
+
 
 class LogManagerSingleton(object):
     def __new__(cls, *args, **kwargs):
@@ -23,7 +29,7 @@ class LogManager(BaseModel, LogManagerSingleton):
 
     log_handle: Annotated[str, Field(frozen=True)] = "_custom_logger"
     log_level: Annotated[str, Field()] = "INFO"
-    handler_type: Annotated[str, Field()] = "stream"
+    log_handler: Annotated[LogHandlers, Field(default=LogHandlers.STREAM)]
 
     def __init__(self, **data: Any) -> None:
         super().__init__(**data)
@@ -32,7 +38,7 @@ class LogManager(BaseModel, LogManagerSingleton):
         self._setup_handler()
 
     def _setup_handler(self):
-        if self.handler_type == "stream":
+        if self.log_handler == LogHandlers.STREAM:
             self.create_stream_handler()
 
     def create_stream_handler(self) -> None:
