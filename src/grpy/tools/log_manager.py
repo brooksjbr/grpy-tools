@@ -6,7 +6,14 @@ from pydantic import BaseModel, ConfigDict, Field
 SelfLM = TypeVar("SelfLM", bound="LogManager")
 
 
-class LogManager(BaseModel):
+class LogManagerSingleton(object):
+    def __new__(cls, *args, **kwargs):
+        if not hasattr(cls, "instance"):
+            cls.instance = super(LogManagerSingleton, cls).__new__(cls)
+        return cls.instance
+
+
+class LogManager(BaseModel, LogManagerSingleton):
     model_config = ConfigDict(
         arbitrary_types_allowed=True,
         str_min_length=4,
@@ -17,12 +24,6 @@ class LogManager(BaseModel):
     log_handle: Annotated[str, Field(frozen=True)] = "_custom_logger"
     log_level: Annotated[str, Field()] = "INFO"
     handler_type: Annotated[str, Field()] = "stream"
-
-    def __new__(cls, *args, **kwargs) -> SelfLM:
-        if not hasattr(cls, "_instance"):
-            cls._instance = super().__new__(cls)
-            cls._logger = None
-        return cls._instance
 
     def __init__(
         self,
