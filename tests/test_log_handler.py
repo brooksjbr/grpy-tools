@@ -12,15 +12,15 @@ class TestLogHandler:
 
     def test_create_handler_returns_stream_handler(self):
         handler = LogHandler()
-        result = handler.create_handler()
+        result = handler.create()
         assert isinstance(result, logging.StreamHandler)
 
     def test_create_handler_with_explicit_stream_type(self):
         handler = LogHandler()
-        result = handler.create_handler(handler_type="STREAM")
+        result = handler.create(handler_type="STREAM")
         assert isinstance(result, logging.StreamHandler)
 
     def test_create_handler_invalid_type(self):
         handler = LogHandler()
         with pytest.raises(KeyError):
-            handler.create_handler(handler_type="INVALID")
+            handler.create(handler_type="INVALID")

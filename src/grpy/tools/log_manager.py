@@ -5,17 +5,7 @@ from pydantic import BaseModel, ConfigDict, Field
 
 SelfLM = TypeVar("SelfLM", bound="LogManager")
 
-from typing import Literal
-
-HANDLER_TYPE = Literal["STREAM"]
-HANDLER_MAPPING: dict[HANDLER_TYPE, type[logging.Handler]] = {"STREAM": logging.StreamHandler}
-
-
-class LogHandler:
-    handler_type: HANDLER_TYPE = "STREAM"
-
-    def create_handler(self, handler_type: HANDLER_TYPE = "STREAM") -> logging.Handler:
-        return HANDLER_MAPPING[handler_type]()
+from .log_handler import LogHandler
 
 
 class LogManagerSingleton(object):
@@ -44,7 +34,7 @@ class LogManager(BaseModel, LogManagerSingleton):
         self._setup_handler()
 
     def _setup_handler(self):
-        handler = self.log_handler.create_handler()
+        handler = self.log_handler.create()
         formatter = logging.Formatter(
             "%(asctime)s - %(levelname)s - %(message)s",
             datefmt="%Y-%m-%d",
