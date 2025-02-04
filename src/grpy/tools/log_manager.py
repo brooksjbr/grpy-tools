@@ -6,6 +6,7 @@ from pydantic import BaseModel, ConfigDict, Field
 SelfLM = TypeVar("SelfLM", bound="LogManager")
 
 from .log_handler import LogHandler
+from .log_level import LogLevel
 
 
 class LogManagerSingleton(object):
@@ -24,14 +25,18 @@ class LogManager(BaseModel, LogManagerSingleton):
     )
 
     log_handle: Annotated[str, Field(frozen=True)] = "_custom_logger"
-    log_level: Annotated[str, Field()] = "INFO"
+    log_level: Annotated[LogLevel, Field()] = LogLevel.INFO
     log_handler: Annotated[LogHandler, Field(default=LogHandler())]
 
     def __init__(self, **data: Any) -> None:
         super().__init__(**data)
         self._setup_logger()
-        self._logger.setLevel(self.log_level)
+        self._logger.setLevel(self.log_level.value_int)
         self._setup_handler()
+
+    def set_level(self, level: LogLevel) -> None:
+        self.log_level = level
+        self._logger.setLevel(self.log_level.value_int)
 
     def _setup_handler(self):
         handler = self.log_handler.create()
