@@ -30,7 +30,7 @@ class LogManager(BaseModel, LogManagerSingleton):
 
     def __init__(self, **data: Any) -> None:
         super().__init__(**data)
-        self._setup_logger()
+        self.init_logger()
         self.set_level()
         self._setup_handler()
 
@@ -46,12 +46,15 @@ class LogManager(BaseModel, LogManagerSingleton):
         handler.setFormatter(formatter)
         self._logger.addHandler(handler)
 
-    def _setup_logger(self):
-        if self._logger is None:
-            self._logger = logging.getLogger(self.log_handle)
+    def init_logger(self):
+        self._logger = logging.getLogger(self.log_handle)
 
     def __getattr__(self, name: str) -> Any:
-        return getattr(self._logger, name)
+        if name == "_logger":
+            return None
+        if hasattr(self, "_logger") and self._logger is not None:
+            return getattr(self._logger, name)
+        raise AttributeError(f"'{self.__class__.__name__}' object has no attribute '{name}'")
 
     @property
     def logger(self) -> logging.Logger:
