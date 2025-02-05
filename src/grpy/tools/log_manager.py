@@ -31,11 +31,10 @@ class LogManager(BaseModel, LogManagerSingleton):
     def __init__(self, **data: Any) -> None:
         super().__init__(**data)
         self._setup_logger()
-        self._logger.setLevel(self.log_level.value_int)
+        self.set_level()
         self._setup_handler()
 
-    def set_level(self, level: LogLevel) -> None:
-        self.log_level = level
+    def set_level(self) -> None:
         self._logger.setLevel(self.log_level.value_int)
 
     def _setup_handler(self):
