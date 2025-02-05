@@ -46,6 +46,12 @@ def capture_logs(caplog):
     return _capture_at_level
 
 
+def test_initializing_logger_passing_to_service(log_manager):
+    log_manager.logger.info("Init logger object")
+    srv = ServiceWithLogger(log_manager=log_manager)
+    srv.log_manager.logger.info("logging from service object")
+
+
 def test_service_logger_initialization(service_with_logger) -> None:
     assert isinstance(service_with_logger.log_manager, LogManager)
     assert isinstance(service_with_logger.log_manager.logger, logging.Logger)

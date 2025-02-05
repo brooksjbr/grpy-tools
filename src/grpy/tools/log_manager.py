@@ -52,13 +52,7 @@ class LogManager(BaseModel, LogManagerSingleton):
             self._logger = logging.getLogger(self.log_handle)
 
     def __getattr__(self, name: str) -> Any:
-        return getattr(self.get_logger, name)
-
-    @property
-    def get_logger(self) -> logging.Logger:
-        if not self._logger:
-            self._setup_logger()
-        return self._logger
+        return getattr(self._logger, name)
 
     @property
     def logger(self) -> logging.Logger:

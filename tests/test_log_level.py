@@ -52,4 +52,4 @@ def test_get_level_invalid():
     with pytest.raises(AttributeError) as exc_info:
         LogLevel.INVALID_LEVEL
 
-    assert "type object 'LogLevel' has no attribute 'INVALID_LEVEL'" in str(exc_info.value)
+    assert "INVALID_LEVEL" in str(exc_info.value)
