@@ -1,3 +1,5 @@
+import logging
+
 import pytest
 
 from grpy.tools.log_manager import LogManager
@@ -89,3 +91,16 @@ def test_invalid_log_level():
     with pytest.raises(ValueError) as exc_info:
         LogManager(log_level="UNKNOWN_LEVEL")
     assert "UNKNOWN_LEVEL" in str(exc_info.value)
+
+
+def test_log_manager_handler_type():
+    lm = LogManager()
+    assert isinstance(lm.handler, logging.StreamHandler)
+    assert isinstance(lm.logger.handlers[0], logging.StreamHandler)
+
+
+def test_log_manager_add_handler():
+    lm = LogManager()
+    lm.add_handler(logging.StreamHandler())
+
+    assert len(lm.handlers) == 1
