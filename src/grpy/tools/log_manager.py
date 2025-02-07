@@ -5,7 +5,6 @@ from pydantic import BaseModel, ConfigDict, Field
 
 SelfLM = TypeVar("SelfLM", bound="LogManager")
 
-from .log_handler import LogHandler
 from .log_level import LogLevel
 
 
@@ -26,7 +25,9 @@ class LogManager(BaseModel, LogManagerSingleton):
 
     log_handle: Annotated[str, Field(frozen=True)] = "_custom_logger"
     log_level: Annotated[LogLevel, Field()] = LogLevel.INFO
-    log_handler: Annotated[LogHandler, Field(default=LogHandler())]
+    handler: Annotated[
+        logging.Handler, Field(default_factory=logging.StreamHandler)
+    ] = logging.StreamHandler()
 
     def __init__(self, **data: Any) -> None:
         super().__init__(**data)
@@ -38,13 +39,12 @@ class LogManager(BaseModel, LogManagerSingleton):
         self._logger.setLevel(self.log_level.value_int)
 
     def _setup_handler(self):
-        handler = self.log_handler.create()
         formatter = logging.Formatter(
             "%(asctime)s - %(levelname)s - %(message)s",
             datefmt="%Y-%m-%d",
         )
-        handler.setFormatter(formatter)
-        self._logger.addHandler(handler)
+        self.handler.setFormatter(formatter)
+        self._logger.addHandler(self.handler)
 
     def init_logger(self):
         self._logger = logging.getLogger(self.log_handle)
