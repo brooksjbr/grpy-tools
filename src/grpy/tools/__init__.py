@@ -11,7 +11,8 @@ These managers form the core toolset for the grpy package operations.
 """
 
 from .command_manager import CommandManager
+from .log_handler import LogHandler
+from .log_level import LogLevel
 from .log_manager import LogManager
-from .path_manager import PathManager
 
-__all__ = ["CommandManager", "PathManager", "LogManager"]
+__all__ = ["LogLevel", "LogHandler", "LogManager", "CommandManager"]
