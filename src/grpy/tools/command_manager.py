@@ -1,11 +1,12 @@
+import logging
 import shlex
 import shutil
 from subprocess import PIPE, Popen
-from typing import Annotated, Callable, List, Optional, TypeVar
+from typing import Annotated, Callable, List, Optional, TypeVar, Union
 
 from pydantic import BaseModel, ConfigDict, Field, ValidationError, model_validator
 
-from grpy.tools.log_manager import LogManager
+from grpy.tools import LogManager
 
 CommandType = List[str]
 CommandListType = List[CommandType]
@@ -22,7 +23,7 @@ class CommandManager(BaseModel):
     model_config = ConfigDict(strict=True, arbitrary_types_allowed=True)
     cmds: Annotated[CommandListType, Field(min_length=1)]
     timeout: Optional[float] = Field(default=2.0, gt=0, description="Command timeout in seconds")
-    logger: LogManager = Field(default_factory=LogManager)
+    logger: Union[LogManager, logging.Logger] = Field(default_factory=LogManager)
 
     # TODO: add pydantic field support, exclude=True
     cmd_whitelist: List[str] = ["git", "python", "pip", "gh"]
