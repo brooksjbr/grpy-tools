@@ -2,7 +2,7 @@ import logging
 
 import pytest
 
-from grpy.tools.log_manager import LogHandler
+from grpy.tools.log_handler import LogHandler
 
 
 class TestLogHandler:
