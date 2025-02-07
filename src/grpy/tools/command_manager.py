@@ -6,7 +6,7 @@ from typing import Annotated, Callable, List, Optional, TypeVar, Union
 
 from pydantic import BaseModel, ConfigDict, Field, ValidationError, model_validator
 
-from grpy.tools import LogManager
+from .log_manager import LogManager
 
 CommandType = List[str]
 CommandListType = List[CommandType]
