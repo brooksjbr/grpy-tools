@@ -33,18 +33,29 @@ class LogManager(BaseModel, LogManagerSingleton):
         super().__init__(**data)
         self.init_logger()
         self.set_level()
-        self._setup_handler()
+        self.init_handler()
 
     def set_level(self) -> None:
-        self._logger.setLevel(self.log_level.value_int)
+        self.setLevel(self.log_level.value_int)
 
-    def _setup_handler(self):
+    def has_handler(self) -> bool:
+        return self.handler in self.handlers
+
+    def add_handler(self, handler: logging.Handler = None):
+        if self.has_handler() and handler is None:
+            return
+
         formatter = logging.Formatter(
             "%(asctime)s - %(levelname)s - %(message)s",
             datefmt="%Y-%m-%d",
         )
         self.handler.setFormatter(formatter)
-        self._logger.addHandler(self.handler)
+        self.addHandler(self.handler)
+
+    def init_handler(self):
+        if self.has_handler():
+            return
+        self.add_handler()
 
     def init_logger(self):
         self._logger = logging.getLogger(self.log_handle)
