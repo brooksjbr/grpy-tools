@@ -121,7 +121,9 @@ def test_command_manager_successful_run():
         cm = CommandManager(cmds=[["git", "status"]])
         cm.run_commands()
 
-        mock_popen.assert_called_once_with(["git", "status"], stdin=PIPE, stderr=PIPE)
+        mock_popen.assert_called_once_with(
+            ["git", "status"], stdout=PIPE, stdin=PIPE, stderr=PIPE, text=True
+        )
         process_mock.communicate.assert_called_once()
 
 
@@ -131,7 +133,9 @@ def test_command_manager_default_timeout(mock_timeout_process, git_status_cmd):
     with pytest.raises(TimeoutError):
         cm.run_commands()
 
-    mock_popen.assert_called_once_with(git_status_cmd, stdin=PIPE, stderr=PIPE)
+    mock_popen.assert_called_once_with(
+        git_status_cmd, stdout=PIPE, stdin=PIPE, stderr=PIPE, text=True
+    )
     process_mock.communicate.assert_called_once_with(timeout=2.0)
 
 
@@ -144,7 +148,9 @@ def test_command_manager_custom_timeout(mock_timeout_process, git_status_cmd, ti
         cm.run_commands()
 
     assert timeout_error_msg in str(exc_info.value)
-    mock_popen.assert_called_once_with(git_status_cmd, stdin=PIPE, stderr=PIPE)
+    mock_popen.assert_called_once_with(
+        git_status_cmd, stdout=PIPE, stdin=PIPE, stderr=PIPE, text=True
+    )
     process_mock.communicate.assert_called_once_with(timeout=60.0)
 
 

@@ -62,16 +62,20 @@ class CommandManager(BaseModel):
 
     @handle_exception
     def run_command(self, cmd: CommandType) -> None:
-        with Popen(cmd, stdin=PIPE, stderr=PIPE) as process:
+        with Popen(cmd, stdout=PIPE, stdin=PIPE, stderr=PIPE, text=True) as process:
             self.logger.info(f"Executing command: {' '.join(cmd)}")
-            cmd_result, err = process.communicate(timeout=self.timeout)
+            stdout, stderr = process.communicate(timeout=self.timeout)
             return_code = process.returncode
+
+            if stdout:
+                self.logger.info(f"Command output:\n{stdout.strip()}")
+
             if return_code != 0:
                 process.kill()
-                raise RuntimeError(f"Command failed: {' '.join(cmd)}\nError: {err}")
+                error_msg = stderr.strip() if stderr else "No error message provided"
+                raise RuntimeError(f"Command failed: {' '.join(cmd)}\nError: {error_msg}")
             else:
                 self.logger.info(f"Command completed successfully: {' '.join(cmd)}")
-                self.logger.info(f"Output: {cmd_result}")
 
     @handle_exception
     def run_commands(self) -> None:
