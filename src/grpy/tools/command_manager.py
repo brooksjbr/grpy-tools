@@ -1,7 +1,7 @@
 import logging
 import shlex
 import shutil
-from subprocess import PIPE, Popen
+from subprocess import PIPE, Popen, TimeoutExpired
 from typing import Annotated, Callable, List, Optional, TypeVar, Union
 
 from pydantic import BaseModel, ConfigDict, Field, ValidationError, model_validator
@@ -64,18 +64,22 @@ class CommandManager(BaseModel):
     def run_command(self, cmd: CommandType) -> None:
         with Popen(cmd, stdout=PIPE, stdin=PIPE, stderr=PIPE, text=True) as process:
             self.logger.info(f"Executing command: {' '.join(cmd)}")
-            stdout, stderr = process.communicate(timeout=self.timeout)
-            return_code = process.returncode
+
+            try:
+                stdout, stderr = process.communicate(timeout=self.timeout)
+            except (TimeoutExpired, TimeoutError):
+                process.kill()
+                raise TimeoutExpired(cmd, self.timeout)
 
             if stdout:
                 self.logger.info(f"Command output:\n{stdout.strip()}")
 
-            if return_code != 0:
+            if process.returncode == 0:
+                self.logger.info(f"Command completed successfully: {' '.join(cmd)}")
+            else:
                 process.kill()
                 error_msg = stderr.strip() if stderr else "No error message provided"
                 raise RuntimeError(f"Command failed: {' '.join(cmd)}\nError: {error_msg}")
-            else:
-                self.logger.info(f"Command completed successfully: {' '.join(cmd)}")
 
     @handle_exception
     def run_commands(self) -> None:

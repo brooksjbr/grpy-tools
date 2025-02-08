@@ -1,4 +1,4 @@
-from subprocess import PIPE
+from subprocess import PIPE, TimeoutExpired
 from unittest.mock import Mock, patch
 
 import pytest
@@ -130,7 +130,7 @@ def test_command_manager_successful_run():
 def test_command_manager_default_timeout(mock_timeout_process, git_status_cmd):
     mock_popen, process_mock = mock_timeout_process
     cm = CommandManager(cmds=[git_status_cmd])
-    with pytest.raises(TimeoutError):
+    with pytest.raises(TimeoutExpired):
         cm.run_commands()
 
     mock_popen.assert_called_once_with(
@@ -141,17 +141,14 @@ def test_command_manager_default_timeout(mock_timeout_process, git_status_cmd):
 
 def test_command_manager_custom_timeout(mock_timeout_process, git_status_cmd, timeout_error_msg):
     mock_popen, process_mock = mock_timeout_process
-    cm = CommandManager(cmds=[git_status_cmd], timeout=60.0)
-    assert cm.timeout == 60.0
+    timeout = 60.0
+    cm = CommandManager(cmds=[git_status_cmd], timeout=timeout)
+    assert cm.timeout == timeout
 
-    with pytest.raises(TimeoutError) as exc_info:
+    with pytest.raises(TimeoutExpired) as exc_info:
         cm.run_commands()
-
-    assert timeout_error_msg in str(exc_info.value)
-    mock_popen.assert_called_once_with(
-        git_status_cmd, stdout=PIPE, stdin=PIPE, stderr=PIPE, text=True
-    )
-    process_mock.communicate.assert_called_once_with(timeout=60.0)
+    assert f"Command '{git_status_cmd}' timed out after {timeout} seconds" in str(exc_info.value)
+    process_mock.communicate.assert_called_once_with(timeout=timeout)
 
 
 @pytest.mark.parametrize("timeout_value", [-1.0, 0, 0.0])
